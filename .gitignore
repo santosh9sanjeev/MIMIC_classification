@@ -1,0 +1,6 @@
+/CheXclusion/cache/
+**/__pycache__/
+**/.ipynb_checkpoints/
+**/results*
+/own_prep/metadata/
+/own_prep/metadata_v3/
