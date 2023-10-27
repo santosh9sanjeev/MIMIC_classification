@@ -14,6 +14,8 @@ import zipfile
 import skimage
 from skimage.io import imread
 from typing import List, Dict
+from PIL import Image
+
 random.seed(42)
 
 def normalize(img, maxval, reshape=False):
@@ -24,6 +26,16 @@ def normalize(img, maxval, reshape=False):
 
     img = (2 * (img.astype(np.float32) / maxval) - 1.) * 1024
 
+    if reshape:
+        # Check that images are 2D arrays
+        if len(img.shape) > 2:
+            img = img[:, :, 0]
+        if len(img.shape) < 2:
+            print("error, dimension lower than 2 for image")
+
+        # add color channel
+        img = img[None, :, :]
+    return img
 
 def apply_transforms(sample, transform, seed=None) -> Dict:
     """Applies transforms to the image and masks.
@@ -228,7 +240,7 @@ class MIMIC_Dataset(Dataset):
         self.labels = self.labels.astype(np.float32)
 
         self.labels[self.labels == -1] = np.nan
-        print(self.labels.shape)
+        # print(self.labels.shape)
         self.pathologies = list(np.char.replace(self.pathologies, "Pleural Effusion", "Effusion"))
 
 
@@ -237,7 +249,7 @@ class MIMIC_Dataset(Dataset):
 
         # patientid
         self.csv["patientid"] = self.csv["subject_id"].astype(str)
-        print('final df', self.csv)
+        # print('final df', self.csv)
 
     def string(self):
         return self.__class__.__name__ + " num_samples={} views={} data_aug={}".format(len(self), self.views, self.data_aug)
@@ -258,12 +270,11 @@ class MIMIC_Dataset(Dataset):
         # img_path = os.path.join(self.imgpath, dicom_id + '.jpg' + '_' + 'p' + subjectid[:2] + '_' + 'p' + subjectid + '_' + 's' + studyid + '_' + 'GT_img1' + '.jpeg')
         # print(img_path)
         img = imread(img_path)
-
+        # img = Image.fromarray(img)
         sample["img"] = normalize(img, maxval=255, reshape=True)
-
         sample = apply_transforms(sample, self.transform)
+        sample['img'] = sample['img'].transpose(1,2,0)
         sample = apply_transforms(sample, self.data_aug)
-
         return sample
 
 

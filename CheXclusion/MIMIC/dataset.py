@@ -45,14 +45,16 @@ class MIMICCXRDataset(Dataset):
     def __getitem__(self, idx):
         item = self.dataframe.iloc[idx]
         # print(self.path_image, item['subject_id'], item['study_id'])
-        img_path = os.path.join(self.path_image, 'p' + str(item['subject_id'])[:2], 'p' + str(item['subject_id']), 's' + str(item['study_id']), str(item["dicom_id"])+ '.jpg')
+        img_path = os.path.join(self.path_image, 'p' + str(item['subject_id'])[:2], 'p' + str(item['subject_id']), 's' + str(item['study_id']), str(item["dicom_id"])+ '.pt')
         # print(img_path)
-        img = imread(img_path)
+        img = torch.load(img_path)
         # print(img.shape)
-        if len(img.shape) == 2:
-            img = img[:, :, np.newaxis]
-            img = np.concatenate([img, img, img], axis=2)
-        img = Image.fromarray(img)
+        # if len(img.shape) == 2:
+        img = torch.cat([img, img, img], dim=0)
+        # print(img.shape) 
+            # img = img[:, :, np.newaxis]
+            # img = np.concatenate([img, img, img], axis=2)
+        # img = Image.fromarray(img)
         # img = imresize(img, (256, 256))
         # img = img.transpose(2, 0, 1)
         # assert img.shape == (3, 256, 256)

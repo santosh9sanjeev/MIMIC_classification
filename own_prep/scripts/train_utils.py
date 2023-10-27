@@ -20,7 +20,7 @@ def train(model, dataset, train_loader, valid_loader, device, args):
     if not exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-
+    dataset_name = 'MIMIC-densenet'
     # Optimizer
     optim = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5, amsgrad=True)
     print(optim)
@@ -33,16 +33,16 @@ def train(model, dataset, train_loader, valid_loader, device, args):
     weights_for_best_validauc = None
     auc_test = None
     metrics = []
-    weights_files = glob(join(cfg.output_dir, f'{dataset_name}-e*.pt'))  # Find all weights files
+    weights_files = glob(join(args.output_dir, f'{dataset_name}-e*.pt'))  # Find all weights files
     if len(weights_files):
         # Find most recent epoch
         epochs = np.array(
-            [int(w[len(join(cfg.output_dir, f'{dataset_name}-e')):-len('.pt')].split('-')[0]) for w in weights_files])
+            [int(w[len(join(args.output_dir, f'{dataset_name}-e')):-len('.pt')].split('-')[0]) for w in weights_files])
         start_epoch = epochs.max()
         weights_file = [weights_files[i] for i in np.argwhere(epochs == np.amax(epochs)).flatten()][0]
         model.load_state_dict(torch.load(weights_file).state_dict())
 
-        with open(join(cfg.output_dir, f'{dataset_name}-metrics.pkl'), 'rb') as f:
+        with open(join(args.output_dir, f'{dataset_name}-metrics.pkl'), 'rb') as f:
             metrics = pickle.load(f)
 
         best_metric = metrics[-1]['best_metric']
@@ -53,7 +53,7 @@ def train(model, dataset, train_loader, valid_loader, device, args):
 
     model.to(device)
     
-    for epoch in range(start_epoch, args.num_epochs):
+    for epoch in range(start_epoch, args.n_epochs):
 
         avg_loss = train_epoch(cfg=args,
                                epoch=epoch,
@@ -118,7 +118,6 @@ def train_epoch(cfg, epoch, model, device, train_loader, optimizer, criterion, l
         
         images = samples["img"].float().to(device)
         targets = samples["lab"].to(device)
-
         outputs = model(images)
         
         loss = torch.zeros(1).to(device).float()
@@ -140,7 +139,7 @@ def train_epoch(cfg, epoch, model, device, train_loader, optimizer, criterion, l
             if not cfg.label_concat:
                 raise Exception("cfg.label_concat must be true")
             weight = model.classifier.weight
-            num_labels = len(xrv.datasets.default_pathologies)
+            num_labels = 13
             num_datasets = weight.shape[0]//num_labels
             weight_stacked = weight.reshape(num_datasets,num_labels,-1)
             label_concat_reg_lambda = torch.tensor(0.1).to(device).float()

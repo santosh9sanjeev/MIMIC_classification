@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import random
-import torchxrayvision as xrv
 
 random.seed(42)
 

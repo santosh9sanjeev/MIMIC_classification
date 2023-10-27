@@ -28,9 +28,9 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
 
 
     # Training parameters
-    batch_size = 48 #48
+    batch_size = 192 #48
 
-    workers = 16  # mean: how many subprocesses to use for data loading.
+    workers = 24  # mean: how many subprocesses to use for data loading.
     N_LABELS = 14
     start_epoch = 0
     num_epochs = 64  # number of epochs to train for (if early stopping is not triggered)
@@ -60,6 +60,7 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
     #     MIMICCXRDataset(val_df,path_image=path_image, transform=transforms.Compose([normalize])),
     #     batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
     train_dataset = MIMICCXRDataset(train_df, path_image=path_image, transform=transforms.Compose([
+                                                                    transforms.ToPILImage(),
                                                                     transforms.RandomHorizontalFlip(),
                                                                     transforms.RandomRotation(15),
                                                                     transforms.Scale(256),
@@ -68,6 +69,7 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
                                                                     normalize
                                                                 ]))
     val_dataset = MIMICCXRDataset(val_df,path_image=path_image, transform=transforms.Compose([
+                                                                transforms.ToPILImage(),
                                                                 transforms.Scale(256),
                                                                 transforms.CenterCrop(256),
                                                                 transforms.ToTensor(),
@@ -76,7 +78,7 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
     
     print(len(train_dataset), len(val_dataset))
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size= batch_size, shuffle=True, num_workers=workers, pin_memory=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
 
     if ModelType == 'densenet':
@@ -90,7 +92,7 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
         
 
     if ModelType == 'Resume':
-        CheckPointData = torch.load('results/checkpoint')
+        CheckPointData = torch.load('results_v2/checkpoint.pth')
         model = CheckPointData['model']
 
 
@@ -126,10 +128,10 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
         epoch_losses_train.append(epoch_loss_train)#.item())
         # print("Train_losses:", epoch_losses_train)
         # print(train_preds)
-        train_accuracy = accuracy_score(np.round(train_labels), np.round(train_preds))
+        # train_accuracy = accuracy_score(np.round(train_labels), np.round(train_preds))
         train_auc = roc_auc_score(train_labels, train_preds)
-        train_f1 = f1_score(np.round(train_labels), np.round(train_preds), average = 'macro')
-        print(f"Train Loss: {epoch_loss_train:.4f}, Accuracy: {train_accuracy:.4f}, AUC: {train_auc:.4f}, F1: {train_f1:.4f} -", end=' ')
+        # train_f1 = f1_score(np.round(train_labels), np.round(train_preds), average = 'macro')
+        print(f"Train Loss: {epoch_loss_train:.4f},  AUC: {train_auc:.4f}") #Accuracy: {train_accuracy:.4f},, F1: {train_f1:.4f} -", end=' ')
         print('hellloooooo')
         phase = 'val'
         optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, model.parameters()), lr=LR)
@@ -137,26 +139,24 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
         epoch_loss_val = running_loss / val_df_size
         epoch_losses_val.append(epoch_loss_val)#.item())
         # print("Validation_losses:", epoch_losses_val)
-        val_accuracy = accuracy_score(np.round(val_labels), np.round(val_preds))
+        # val_accuracy = accuracy_score(np.round(val_labels), np.round(val_preds))
         val_auc = roc_auc_score(val_labels, val_preds)
-        val_f1 = f1_score(np.round(val_labels), np.round(val_preds), average = 'macro')
-        print(f"Validation Loss: {epoch_loss_val:.4f}, Accuracy: {val_accuracy:.4f}, AUC: {val_auc:.4f}, F1: {val_f1:.4f}")
+        # val_f1 = f1_score(np.round(val_labels), np.round(val_preds), average = 'macro')
+        print(f"Validation Loss: {epoch_loss_val:.4f}, AUC: {val_auc:.4f}") #, Accuracy: {val_accuracy:.4f}, , F1: {val_f1:.4f}")
 
         # checkpoint model if has best val loss yet
         if epoch_loss_val < best_loss:
             best_loss = epoch_loss_val
             best_epoch = epoch
-            best_accuracy = val_accuracy
             best_auc = val_auc
-            best_f1 = val_f1
-            checkpoint(model, best_loss, best_epoch, LR, output_folder, best_auc, best_f1, best_accuracy)
+            checkpoint(model, best_loss, best_epoch, LR, output_folder, best_auc)
 
                 # log training and validation loss over each epoch
         with open("results/log_train", 'a') as logfile:
             logwriter = csv.writer(logfile, delimiter=',')
             if (epoch == 1):
-                logwriter.writerow(["epoch", "train_loss", "val_loss", "train_Accuracy", "val_Accuracy", "train_AUC", "val_AUC", "train_F1", "val_F1", "Seed", "LR"])
-            logwriter.writerow([epoch, epoch_loss_train, epoch_loss_val, train_accuracy, val_accuracy, train_auc, val_auc, train_f1, val_f1, random_seed, LR])
+                logwriter.writerow(["epoch", "train_loss", "val_loss", "train_AUC", "val_AUC", "Seed", "LR"])
+            logwriter.writerow([epoch, epoch_loss_train, epoch_loss_val, train_auc, val_auc, random_seed, LR])
 
 # -------------------------- End of phase
 
@@ -173,7 +173,7 @@ def ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR
     #------------------------- End of epoch loop
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
-    # Saved_items(epoch_losses_train, epoch_losses_val, time_elapsed, batch_size)
+    Saved_items(epoch_losses_train, epoch_losses_val, time_elapsed, batch_size)
     #
     model_path = os.path.join(output_folder, 'checkpoint.pth')
     checkpoint_best = torch.load(model_path)

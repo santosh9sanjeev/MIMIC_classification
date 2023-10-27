@@ -9,13 +9,13 @@ import os
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 #----------------------------- q
-path_image = "/share/ssddata/physionet.org/files/mimic-cxr-jpg/2.0.0/files"
+path_image = "/share/ssddata/mimic_pt/"
 
 
 df_path ="/share/ssddata/physionet.org/files/mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-chexpert.csv"
 dataset_split_path = "/share/ssddata/physionet.org/files/mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-split.csv"
 metadata_path = "/share/ssddata/physionet.org/files/mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-metadata.csv"
-output_folder = '/home/santoshsanjeev/MIMIC_classification/CheXclusion/MIMIC/results_v1'
+output_folder = '/home/santoshsanjeev/MIMIC_classification/CheXclusion/MIMIC/results_v2'
 
 if not os.path.exists(output_folder):
    os.makedirs(output_folder)
@@ -102,7 +102,7 @@ def main():
 
     if MODE =="test":
 
-        CheckPointData = torch.load('results/checkpoint')
+        CheckPointData = torch.load('results_v2/checkpoint.pth')
         model = CheckPointData['model']
 
         make_pred_multilabel(model, test_df, val_df, path_image, device)
@@ -113,13 +113,13 @@ def main():
         CriterionType = 'BCELoss'
         LR = 0.5e-3
 
-        model, best_epoch = ModelTrain(train_df_path, val_df_path, path_image, ModelType, CriterionType, device,LR)
+        model, best_epoch = ModelTrain(train_df, val_df, path_image, ModelType, CriterionType, device,LR)
 
         PlotLearnignCurve()
 
     if MODE == "plot":
         TrueWithMeta = pd.read_csv("./True_withMeta.csv")
-        pred = pd.read_csv("./results/bipred.csv")
+        pred = pd.read_csv("./results_v2/bipred.csv")
         factor = [gender, age_decile, race, insurance]
         factor_str = ['gender', 'age_decile', 'race', 'insurance']
 

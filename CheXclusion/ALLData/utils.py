@@ -18,7 +18,7 @@ def Saved_items(epoch_losses_train, epoch_losses_val, time_elapsed, batch_size):
         'time_elapsed': time_elapsed,
         "batch_size": batch_size
     }
-    torch.save(state2, 'results/Saved_items')
+    torch.save(state2, 'results_v2/Saved_items')
 
 def checkpoint(model, best_loss, best_epoch, LR):
     """
@@ -39,7 +39,7 @@ def checkpoint(model, best_loss, best_epoch, LR):
         'best_epoch': best_epoch,
         'LR': LR
     }
-    torch.save(state, 'results/checkpoint')
+    torch.save(state, 'results_v2/checkpoint.pth')
 
 class AverageMeter(object):
     """

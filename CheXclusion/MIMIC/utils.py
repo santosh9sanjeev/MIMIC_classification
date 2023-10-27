@@ -18,9 +18,9 @@ def Saved_items(epoch_losses_train, epoch_losses_val, time_elapsed, batch_size):
         'time_elapsed': time_elapsed,
         "batch_size": batch_size
     }
-    torch.save(state2, 'results/Saved_items')
+    torch.save(state2, './results_v2/Saved_items')
 
-def checkpoint(model, best_loss, best_epoch, LR, output_folder, best_auc, best_f1, best_acc):
+def checkpoint(model, best_loss, best_epoch, LR, output_folder, best_auc):
     """
     Saves checkpoint of torchvision model during training.
     Args:
@@ -38,8 +38,6 @@ def checkpoint(model, best_loss, best_epoch, LR, output_folder, best_auc, best_f
         'best_loss': best_loss,
         'best_epoch': best_epoch,
         'best_auc': best_auc,
-        'best_f1': best_f1,
-        'best_acc': best_acc,
         'LR': LR
     }
     model_path = os.path.join(output_folder, 'checkpoint.pth')
