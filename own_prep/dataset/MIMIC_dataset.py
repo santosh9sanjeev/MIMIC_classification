@@ -15,7 +15,6 @@ import skimage
 from skimage.io import imread
 from typing import List, Dict
 from PIL import Image
-
 random.seed(42)
 
 def normalize(img, maxval, reshape=False):
@@ -205,6 +204,7 @@ class MIMIC_Dataset(Dataset):
         self.csv = pd.read_csv(self.csvpath)
         self.metacsvpath = metacsvpath
         self.splitpath = splitpath
+        # self.PIL_transform = transforms.ToPILImage()
         
         self.metacsv = pd.read_csv(self.metacsvpath)
         # print('metaaaaaaaaaaaaaaa',self.metacsv)
@@ -266,15 +266,21 @@ class MIMIC_Dataset(Dataset):
         studyid = str(self.csv.iloc[idx]["study_id"])
         dicom_id = str(self.csv.iloc[idx]["dicom_id"])
 
-        img_path = os.path.join(self.imgpath, "p" + subjectid[:2], "p" + subjectid, "s" + studyid, dicom_id + ".jpg")
+        img_path = os.path.join(self.imgpath, "p" + subjectid[:2], "p" + subjectid, "s" + studyid, dicom_id + ".pt")
         # img_path = os.path.join(self.imgpath, dicom_id + '.jpg' + '_' + 'p' + subjectid[:2] + '_' + 'p' + subjectid + '_' + 's' + studyid + '_' + 'GT_img1' + '.jpeg')
         # print(img_path)
-        img = imread(img_path)
+        # img = imread(img_path)
         # img = Image.fromarray(img)
-        sample["img"] = normalize(img, maxval=255, reshape=True)
+        img = torch.load(img_path)
+        img = img.detach().cpu().numpy()
+        # print(img.shape)
+        sample["img"] = normalize(img, maxval=255, reshape=False)
+        # print(sample["img"], sample["img"].shape)
         sample = apply_transforms(sample, self.transform)
         sample['img'] = sample['img'].transpose(1,2,0)
         sample = apply_transforms(sample, self.data_aug)
+        # print(sample["img"].shape)
+
         return sample
 
 

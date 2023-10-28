@@ -22,7 +22,7 @@ from torchvision import datasets, transforms
 import os
 from scripts import train_utils
 import torchvision as xrv
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '8'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--label_concat', type=bool, default=False, help='')
     parser.add_argument('--label_concat_reg', type=bool, default=False, help='')
     parser.add_argument('--labelunion', type=bool, default=False, help='')
-    parser.add_argument('--seed', default=42, type=int)
+    parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--model', default='vit_b_16', type=str, help='pretrained model')
     parser.add_argument('--task', default='binary-class', type=str, help='available things {multi-label, multi-class, binary-class}')
     parser.add_argument('--csv', default='/home/santosh.sanjeev/model-soups/my_soups/metadata/RSNA_final_df.csv', type=str, help='Data directory')
@@ -53,9 +53,9 @@ if __name__ == '__main__':
     parser.add_argument('--norm', default=0.5, type=float, help='which norm')
 
     parser.add_argument('--n_gpus', default=1, type=int)
-    parser.add_argument('--n_epochs', default=100, type=int)
+    parser.add_argument('--n_epochs', default=2, type=int)
     parser.add_argument('--batch_size', default=32, type=int)
-    parser.add_argument('--num_workers', default=16, type=int)
+    parser.add_argument('--num_workers', default=4, type=int)
     parser.add_argument('--taskweights', type=bool, default=True, help='')
 
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         normalize = transforms.Normalize(mean=mean, std=std)
 
     # preprocessing
-    data_transform = transforms.Compose([XRayCenterCrop(), XRayResizer(512)])
+    # data_transform = transforms.Compose([XRayCenterCrop(), XRayResizer(512)])
 
     data_aug = None
     if args.data_aug:
@@ -107,23 +107,23 @@ if __name__ == '__main__':
             torchvision.transforms.ToTensor()
         ])
         print(data_aug)
-
-    train_dataset = MIMIC_Dataset(imgpath="/share/ssddata/physionet.org/files/mimic-cxr-jpg/2.0.0/files/", 
+    im_path = "/nfs/users/ext_ibrahim.almakky/mimic_pt" #'/nfs/users/ext_ibrahim.almakky/datasets/physionet.org/files/mimic-cxr-jpg/2.0.0/files/' 
+    train_dataset = MIMIC_Dataset(imgpath=im_path, 
                                   csvpath=args.data_dir + "mimic-cxr-2.0.0-chexpert.csv.gz",
                                   metacsvpath=args.data_dir + "mimic-cxr-2.0.0-metadata.csv.gz",
                                   splitpath = args.data_dir + "mimic-cxr-2.0.0-split.csv.gz", split = 'train',
-                                  transform=data_transform, data_aug=data_aug, unique_patients=False, views=["PA","AP"])
+                                  transform=None, data_aug=data_aug, unique_patients=False, views=["PA","AP"])
  
-    val_dataset = MIMIC_Dataset(imgpath="/share/ssddata/physionet.org/files/mimic-cxr-jpg/2.0.0/files/", 
+    val_dataset = MIMIC_Dataset(imgpath=im_path, 
                                   csvpath=args.data_dir + "mimic-cxr-2.0.0-chexpert.csv.gz",
                                   metacsvpath=args.data_dir + "mimic-cxr-2.0.0-metadata.csv.gz",
                                   splitpath = args.data_dir + "mimic-cxr-2.0.0-split.csv.gz", split = 'validate',
-                                  transform=data_transform, data_aug=data_aug, unique_patients=False, views=["PA","AP"])
-    test_dataset = MIMIC_Dataset(imgpath="/share/ssddata/physionet.org/files/mimic-cxr-jpg/2.0.0/files/", 
+                                  transform=None, data_aug=data_aug, unique_patients=False, views=["PA","AP"])
+    test_dataset = MIMIC_Dataset(imgpath=im_path, 
                                   csvpath=args.data_dir + "mimic-cxr-2.0.0-chexpert.csv.gz",
                                   metacsvpath=args.data_dir + "mimic-cxr-2.0.0-metadata.csv.gz",
                                   splitpath = args.data_dir + "mimic-cxr-2.0.0-split.csv.gz", split = 'test',
-                                  transform=data_transform, data_aug=data_aug, unique_patients=False, views=["PA","AP"])
+                                  transform=None, data_aug=data_aug, unique_patients=False, views=["PA","AP"])
 
 
     train_loader = data.DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers = args.num_workers)
@@ -140,7 +140,7 @@ if __name__ == '__main__':
 
     print("train_dataset.labels.shape", train_dataset.labels.shape)
     print("test_dataset.labels.shape", test_dataset.labels.shape)
-
+    # exit()
     # create models
     if "densenet" in args.model:
         model = local_model.DenseNet(num_classes=train_dataset.labels.shape[1], in_channels=1, 
